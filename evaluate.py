@@ -2,8 +2,9 @@
 Evaluation Harness for the Kivi Phonetic Memory System.
 
 Reads test cases from `seed_data.json`, initializes an isolated database,
-runs setup observations, executes the intervention pipeline via the LLM,
-calculates target metrics, and generates a formatted Markdown report.
+seeds the dictionary via explicit corrections and direct overrides,
+runs the intervention pipeline via the LLM, calculates metrics,
+and generates a formatted Markdown report.
 """
 import os
 import json
@@ -24,51 +25,43 @@ async def run_evaluation():
         
     metrics = {
         "true_positives": 0,
-        "false_positives": 0,  # FIR
-        "false_negatives": 0,  # Missed interventions
+        "false_positives": 0,
+        "false_negatives": 0,
         "true_negatives": 0,
         "latencies": [],
-        "total_cost_tokens": 0,
         "total_cases": len(cases),
-        "db_rows_added": 0
     }
     
     results_markdown = []
 
     for idx, case in enumerate(cases):
-        print(f"Running Case {idx+1}/{len(cases)}: {case['category']}")
+        print(f"Running Case {idx+1}/{len(cases)}: {case['id']} - {case['category']}")
         
         # 1. Setup isolated DB for each case to prevent state bleed
         db_path = f"test_eval_case_{idx}.db"
         db.init_db(db_path, reset=True)
         conn = db.get_connection(db_path)
         
-        # 2. Seed data
+        # 2. Seed phonetic dictionary via explicit corrections
         for expl in case.get("setup_explicit", []):
             learning.ingest_explicit_correction(
                 conn, expl["canonical"], expl["context"], expl.get("asr_token")
             )
         
-        for impl in case.get("setup_implicit", []):
-            learning.ingest_observation(conn, impl["asr"], impl["fmt"])
+        # 3. Seed direct overrides
+        for ovr in case.get("setup_overrides", []):
+            conn.execute(
+                "INSERT OR REPLACE INTO exact_overrides (asr_token, canonical_word) VALUES (?, ?)",
+                (ovr["asr_token"], ovr["canonical_word"])
+            )
             
         conn.commit()
         
-        # Count DB size before intervention
-        start_rows = conn.execute("SELECT count(*) FROM user_dictionary").fetchone()[0]
-        
-        # 3. Run Pipeline
+        # 4. Run Pipeline
         start_time = time.time()
         final_output = await intervention.process_transcript(conn, case["test_asr"])
         latency = (time.time() - start_time) * 1000
         
-        # 4. Measure DB Growth and Cost
-        metrics["db_rows_added"] += start_rows
-        
-        logs = conn.execute("SELECT * FROM intervention_logs ORDER BY id DESC LIMIT 10").fetchall()
-        for log in logs:
-            metrics["total_cost_tokens"] += log["token_cost"]
-            
         conn.close()
         
         # 5. Determine Correctness
@@ -76,7 +69,6 @@ async def run_evaluation():
         actual = final_output
         is_correct = (expected.lower() == actual.lower())
         
-        # Figure out confusion matrix theoretically based on if a change was expected
         change_expected = (case["test_asr"].lower() != expected.lower())
         change_made = (case["test_asr"].lower() != actual.lower())
         
@@ -88,39 +80,50 @@ async def run_evaluation():
             status = "✅ True Negative"
         elif change_made and not change_expected:
             metrics["false_positives"] += 1
-            status = "❌ False Positive (Hallucination/FIR)"
+            status = "❌ False Positive (Hallucination)"
         elif change_expected and not change_made:
             metrics["false_negatives"] += 1
             status = "❌ False Negative (Missed)"
+        elif change_expected and change_made and not is_correct:
+            metrics["false_positives"] += 1
+            status = "⚠️ Incorrect Modification"
         else:
-            status = "❌ Incorrect Modification"
+            status = "❓ Unknown"
             
         metrics["latencies"].append(latency)
         
-        # 6. Formatting
-        results_markdown.append(f"### {case['category']} ({status})\n")
+        # 6. Format result
+        results_markdown.append(f"### Case {idx+1}: {case['category']} ({status})\n")
         results_markdown.append(f"- **Description**: {case['description']}\n")
         results_markdown.append(f"- **Input ASR**: `{case['test_asr']}`\n")
         results_markdown.append(f"- **Expected**: `{expected}`\n")
         results_markdown.append(f"- **Actual**: `{actual}`\n")
+        results_markdown.append(f"- **Match**: {'✅' if is_correct else '❌'}\n")
         results_markdown.append(f"- **Latency**: {latency:.2f}ms\n\n")
         
-        # Cleanup
-        try:
-            os.remove(db_path)
-            os.remove(db_path + "-wal")
-            os.remove(db_path + "-shm")
-        except:
-            pass
+        # Cleanup temp DB files
+        for ext in ["", "-wal", "-shm"]:
+            try:
+                os.remove(db_path + ext)
+            except:
+                pass
+                
+        # To avoid hitting TPM/RPM rate limits on free LLM tiers (like Groq), pause briefly
+        if idx < len(cases) - 1:
+            print("Waiting 2s to avoid API rate limits...")
+            await asyncio.sleep(2)
 
     # Calculate final metrics
     tp = metrics["true_positives"]
     fp = metrics["false_positives"]
     fn = metrics["false_negatives"]
+    tn = metrics["true_negatives"]
     
     precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 1.0
-    fir = fp / metrics["total_cases"]
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+    accuracy = (tp + tn) / metrics["total_cases"] if metrics["total_cases"] > 0 else 0.0
+    fir = fp / metrics["total_cases"] if metrics["total_cases"] > 0 else 0.0
     
     p50 = np.percentile(metrics["latencies"], 50)
     p95 = np.percentile(metrics["latencies"], 95)
@@ -129,13 +132,22 @@ async def run_evaluation():
     report = f"""# Kivi Phonetic Memory System - Evaluation Report
 
 ## Summary Metrics
-- **Intervention Precision**: {precision:.1%}
-- **Intervention Recall**: {recall:.1%}
-- **False Intervention Rate (FIR)**: {fir:.1%}
-- **Latency (P50)**: {p50:.2f} ms
-- **Latency (P95)**: {p95:.2f} ms
-- **Total Token Cost**: {metrics["total_cost_tokens"]} tokens
-- **Dictionary Growth (Test Total)**: {metrics["db_rows_added"]} active/pending entries
+| Metric | Value |
+|--------|-------|
+| **Accuracy** | {accuracy:.1%} |
+| **Precision** | {precision:.1%} |
+| **Recall** | {recall:.1%} |
+| **F1 Score** | {f1:.1%} |
+| **False Intervention Rate** | {fir:.1%} |
+| **Latency (P50)** | {p50:.0f} ms |
+| **Latency (P95)** | {p95:.0f} ms |
+| **Total Test Cases** | {metrics["total_cases"]} |
+
+### Confusion Matrix
+|  | Predicted Positive | Predicted Negative |
+|--|---|---|
+| **Actual Positive** | {tp} (TP) | {fn} (FN) |
+| **Actual Negative** | {fp} (FP) | {tn} (TN) |
 
 ---
 
@@ -147,9 +159,17 @@ async def run_evaluation():
     with open(REPORT_FILE, "w", encoding="utf-8") as f:
         f.write(report)
         
-    print(f"\nEvaluation Complete! Report saved to {REPORT_FILE}")
+    print(f"\n{'='*50}")
+    print(f"Accuracy: {accuracy:.1%} | Precision: {precision:.1%} | Recall: {recall:.1%} | F1: {f1:.1%}")
+    print(f"Latency P50: {p50:.0f}ms | P95: {p95:.0f}ms")
+    print(f"Report saved to {REPORT_FILE}")
 
 if __name__ == "__main__":
-    if not os.environ.get("OPENAI_API_KEY"):
-        print("WARNING: OPENAI_API_KEY is not set. The evaluation will run with the fallback dummy key and will likely fail the LLM judgments.")
+    if not os.environ.get("GROQ_API_KEY"):
+        print("WARNING: GROQ_API_KEY is not set. LLM judgments will fail.")
+    print("=================================================================================")
+    print("WARNING: This script runs multiple sequential LLM calls.")
+    print("If you are on a free API tier (e.g., Groq free tier), this may hit RPM/TPM limits")
+    print("or cause timeouts. We recommend testing manually via the Streamlit UI instead.")
+    print("=================================================================================\n")
     asyncio.run(run_evaluation())

@@ -103,9 +103,7 @@ def find_candidates(conn: sqlite3.Connection, asr_text: str, max_ngram: int = 2)
                 norm_canonical = squash_repeats(phonetic_spelling_normalize(normalize(canonical.replace(" ", ""))))
                 char_dist = edit_distance(norm_str, norm_canonical)
                 
-                # Reject if it exceeds the absolute cap OR the relative ratio
-                if char_dist > config.MAX_CHAR_EDIT_DISTANCE:
-                    continue
+                # Reject if it exceeds the relative ratio (absolute cap removed per user request)
                 longer_len = max(len(norm_str), len(norm_canonical))
                 if longer_len > 0 and (char_dist / longer_len) > config.MAX_EDIT_DISTANCE_RATIO:
                     continue

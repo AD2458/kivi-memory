@@ -1,105 +1,104 @@
 [
   {
-    "id": "case_1_true_positive",
-    "category": "True Positive",
-    "description": "Correctly replacing a known phonetic misspelling.",
+    "id": "case_1_multi_entity_tech_context",
+    "category": "Multi-Entity Tech Context",
+    "description": "Multiple occurrences of aditya and kiwi in a purely technical context.",
     "setup_explicit": [
-      {
-        "canonical": "Aaditya",
-        "context": "Aaditya is our lead engineer.",
-        "asr_token": "aditya"
-      }
+      {"canonical": "Aaditya", "context": "Aaditya is our lead engineer.", "asr_token": "aditya"},
+      {"canonical": "Kivi", "context": "Kivi is a phonetic memory AI system.", "asr_token": "kiwi"}
     ],
-    "setup_implicit": [],
-    "test_asr": "ask aditya to review the PR",
-    "expected_output": "ask Aaditya to review the PR"
+    "setup_overrides": [],
+    "test_asr": "Did aditya check the logs? If it's a kiwi-related issue, aditya needs to fix kiwi, not the frontend.",
+    "expected_output": "Did Aaditya check the logs? If it's a Kivi-related issue, Aaditya needs to fix Kivi, not the frontend."
   },
   {
-    "id": "case_2_true_negative_context",
-    "category": "True Negative",
-    "description": "Leaving a word alone despite phonetic match due to semantic mismatch.",
+    "id": "case_2_mixed_fruit_and_tech",
+    "category": "Mixed Context (Fruit vs Tech)",
+    "description": "kiwi smoothie is literal fruit, kiwi API and kiwi server are tech references.",
     "setup_explicit": [
-      {
-        "canonical": "Kivi",
-        "context": "Kivi is a phonetic memory AI system.",
-        "asr_token": "kiwi"
-      }
+      {"canonical": "Aaditya", "context": "Aaditya is our lead engineer.", "asr_token": "aditya"},
+      {"canonical": "Kivi", "context": "Kivi is a phonetic memory AI system.", "asr_token": "kiwi"}
     ],
-    "setup_implicit": [],
-    "test_asr": "I bought a fresh kiwi from the market",
-    "expected_output": "I bought a fresh kiwi from the market"
+    "setup_overrides": [],
+    "test_asr": "aditya ordered a kiwi smoothie while fixing the kiwi API, but aditya spilled it on the kiwi server",
+    "expected_output": "Aaditya ordered a kiwi smoothie while fixing the Kivi API, but Aaditya spilled it on the Kivi server"
   },
   {
-    "id": "case_3_pending_memory",
-    "category": "Pending Memory",
-    "description": "Ignoring a phonetic match because evidence_count has not met the threshold.",
+    "id": "case_3_triple_entity_tech",
+    "category": "Triple Entity Replacement",
+    "description": "Three occurrences of aditya and two of kiwi, all in tech context.",
+    "setup_explicit": [
+      {"canonical": "Aaditya", "context": "Aaditya is our lead engineer.", "asr_token": "aditya"},
+      {"canonical": "Kivi", "context": "Kivi is a phonetic memory AI system.", "asr_token": "kiwi"}
+    ],
+    "setup_overrides": [],
+    "test_asr": "aditya mentioned that the kiwi dashboard is failing, so ask aditya to restart kiwi before aditya leaves for the day",
+    "expected_output": "Aaditya mentioned that the Kivi dashboard is failing, so ask Aaditya to restart Kivi before Aaditya leaves for the day"
+  },
+  {
+    "id": "case_4_long_sentence_tech",
+    "category": "Long Sentence Tech Context",
+    "description": "Long sentence with multiple aditya and kiwi references in production context.",
+    "setup_explicit": [
+      {"canonical": "Aaditya", "context": "Aaditya is our lead engineer.", "asr_token": "aditya"},
+      {"canonical": "Kivi", "context": "Kivi is a phonetic memory AI system.", "asr_token": "kiwi"}
+    ],
+    "setup_overrides": [],
+    "test_asr": "I spoke with aditya earlier this morning, and aditya mentioned that the kiwi authentication service is failing in production, so please ping aditya before the next kiwi deployment",
+    "expected_output": "I spoke with Aaditya earlier this morning, and Aaditya mentioned that the Kivi authentication service is failing in production, so please ping Aaditya before the next Kivi deployment"
+  },
+  {
+    "id": "case_5_fruit_vs_tech_hard",
+    "category": "Hard Disambiguation",
+    "description": "kiwi fruit is literal, kiwi client library and kiwi pull request are tech. The hardest test.",
+    "setup_explicit": [
+      {"canonical": "Aaditya", "context": "Aaditya is our lead engineer.", "asr_token": "aditya"},
+      {"canonical": "Kivi", "context": "Kivi is a phonetic memory AI system.", "asr_token": "kiwi"}
+    ],
+    "setup_overrides": [],
+    "test_asr": "While eating a fresh kiwi fruit during lunch, aditya reminded the team that the kiwi client library has a memory leak, so aditya asked everyone to stop shipping features until aditya reviews the kiwi pull request.",
+    "expected_output": "While eating a fresh kiwi fruit during lunch, Aaditya reminded the team that the Kivi client library has a memory leak, so Aaditya asked everyone to stop shipping features until Aaditya reviews the Kivi pull request."
+  },
+  {
+    "id": "case_6_pooja_from_puja",
+    "category": "Vowel Normalization (oo/u)",
+    "description": "ASR outputs 'puja' but the dictionary holds 'Pooja'. Tests oo->u symmetry.",
+    "setup_explicit": [
+      {"canonical": "Pooja", "context": "Pooja manages the frontend design team.", "asr_token": "puja"}
+    ],
+    "setup_overrides": [],
+    "test_asr": "ask puja to review the UI mockups before the sprint ends",
+    "expected_output": "ask Pooja to review the UI mockups before the sprint ends"
+  },
+  {
+    "id": "case_7_rajeev_to_rajiv",
+    "category": "Vowel Normalization (ee/i)",
+    "description": "ASR outputs 'rajeev' but the dictionary holds 'Rajiv'. Tests ee->i normalization.",
+    "setup_explicit": [
+      {"canonical": "Rajiv", "context": "Rajiv manages the database migrations.", "asr_token": "rajeev"}
+    ],
+    "setup_overrides": [],
+    "test_asr": "did you ask rajeev about the database schema change?",
+    "expected_output": "did you ask Rajiv about the database schema change?"
+  },
+  {
+    "id": "case_10_keevee_direct_override",
+    "category": "Direct Override",
+    "description": "Testing the zero-latency direct override for 'keevee' -> 'Kivi'.",
     "setup_explicit": [],
-    "setup_implicit": [
-      {
-        "asr": "tell rakesh to deploy",
-        "fmt": "Tell Rakeshh to deploy."
-      }
+    "setup_overrides": [
+      {"asr_token": "keevee", "canonical_word": "Kivi"}
     ],
-    "test_asr": "is rakesh online",
-    "expected_output": "is rakesh online"
+    "test_asr": "the keevee system is down, please restart keevee",
+    "expected_output": "the Kivi system is down, please restart Kivi"
   },
   {
-    "id": "case_4_conflicting_memories",
-    "category": "Conflicting Memories",
-    "description": "Disambiguating two similar phonetic matches based on semantic context snippets.",
-    "setup_explicit": [
-      {
-        "canonical": "Aditi",
-        "context": "Aditi manages the frontend design.",
-        "asr_token": "aditi"
-      },
-      {
-        "canonical": "Aditya",
-        "context": "Aditya handles the backend database migrations.",
-        "asr_token": "aditya"
-      }
-    ],
-    "setup_implicit": [],
-    "test_asr": "ask aditya about the database migration",
-    "expected_output": "ask Aditya about the database migration"
-  },
-  {
-    "id": "case_5_novel_entity",
-    "category": "Novel Entities",
+    "id": "case_11_novel_entity",
+    "category": "Novel Entity (True Negative)",
     "description": "Refusing to hallucinate a correction for a completely unseen proper noun.",
     "setup_explicit": [],
-    "setup_implicit": [],
+    "setup_overrides": [],
     "test_asr": "ask Nandini to review the doc",
     "expected_output": "ask Nandini to review the doc"
-  },
-  {
-    "id": "case_6_rajeev_to_rajiv",
-    "category": "Symmetric Phonetic Fix",
-    "description": "Correctly applying the ee->i normalization when spoken is 'rajeev' and DB is 'Rajiv'.",
-    "setup_explicit": [
-      {
-        "canonical": "Rajiv",
-        "context": "Rajiv is managing the new database migration.",
-        "asr_token": "rajeev"
-      }
-    ],
-    "setup_implicit": [],
-    "test_asr": "did you ask rajeev about the database?",
-    "expected_output": "did you ask Rajiv about the database?"
-  },
-  {
-    "id": "case_7_rajiv_to_rajeev",
-    "category": "Symmetric Phonetic Fix",
-    "description": "Correctly applying the ee->i normalization when spoken is 'rajiv' and DB is 'Rajeev'.",
-    "setup_explicit": [
-      {
-        "canonical": "Rajeev",
-        "context": "Rajeev handles the backend systems.",
-        "asr_token": "rajiv"
-      }
-    ],
-    "setup_implicit": [],
-    "test_asr": "tell rajiv to restart the server",
-    "expected_output": "tell Rajeev to restart the server"
   }
 ]

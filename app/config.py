@@ -11,7 +11,7 @@ EVIDENCE_THRESHOLD_FOR_ACTIVATION = 2
 # discrepancy) is trusted immediately -- the user directly told us the
 # right spelling, there's no ambiguity to accumulate evidence against.
 EXPLICIT_CORRECTION_ACTIVATES_IMMEDIATELY = True
-# Maximum character-level edit distance (after Indian-English normalization)
+# Maximum character-level edit distance (after phonetic spelling normalization)
 # between an ASR token and a canonical word. This is a simple absolute cap
 # to prevent short phonetic hashes from matching half the dictionary.
 # Valid corrections are typically 0-2 edits; garbage matches are 5+.

@@ -1,8 +1,7 @@
 """
 Phonetic encoding and distance utilities.
 
-Uses Double Metaphone to generate primary and secondary phonetic codes,
-along with Indian-English pre-processing heuristics.
+Uses Double Metaphone to generate primary and secondary phonetic codes.
 """
 import re
 from dataclasses import dataclass
