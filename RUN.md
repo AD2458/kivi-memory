@@ -30,7 +30,6 @@ This guide outlines the exact steps to install, run, and test the system locally
    # macOS/Linux:
    export GROQ_API_KEY="your_api_key_here"
    ```
-   *(Note: The system contains a fallback hardcoded Groq key for immediate testing if you prefer to skip this step).*
 
 ## 2. Start the Backend API
 
@@ -72,4 +71,4 @@ You can use the Streamlit UI to test the exact scenarios discussed in the archit
 
 ## 5. Resetting the System
 
-To start fresh and clear all learned vocabulary, navigate to the **User Dictionary** tab in the UI and click the **🚨 Nuke Database** button in the top right corner. This will wipe the SQLite database clean.
+To start fresh and clear all learned vocabulary, navigate to the **User Dictionary** tab in the UI and click the **Clear Entire Memory Store** button in the top right corner. This will wipe the SQLite database clean.
