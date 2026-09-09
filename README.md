@@ -47,17 +47,4 @@ Instead of permanently mutating the dictionary with heavy linguistic heuristics,
 
 ## 🚀 Setup & Execution
 
-**Prerequisites:** Python 3.11+
-
-1. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Environment Variables:**
-   Ensure you have your LLM API key configured (e.g., `GROQ_API_KEY`) in your `.env` or system environment.
-3. **Run the Dashboard:**
-   ```bash
-   streamlit run app_ui.py
-   ```
-4. **Database:** 
-   The system will automatically initialize `kivi.db` locally using Write-Ahead Logging (WAL) for safe, concurrent async operations.
+Please see [RUN.md](./RUN.md) for complete, step-by-step instructions on how to install dependencies, configure environment variables, and execute the local FastAPI backend and Streamlit dashboard.
