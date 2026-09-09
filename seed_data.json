@@ -1,0 +1,105 @@
+[
+  {
+    "id": "case_1_true_positive",
+    "category": "True Positive",
+    "description": "Correctly replacing a known phonetic misspelling.",
+    "setup_explicit": [
+      {
+        "canonical": "Aaditya",
+        "context": "Aaditya is our lead engineer.",
+        "asr_token": "aditya"
+      }
+    ],
+    "setup_implicit": [],
+    "test_asr": "ask aditya to review the PR",
+    "expected_output": "ask Aaditya to review the PR"
+  },
+  {
+    "id": "case_2_true_negative_context",
+    "category": "True Negative",
+    "description": "Leaving a word alone despite phonetic match due to semantic mismatch.",
+    "setup_explicit": [
+      {
+        "canonical": "Kivi",
+        "context": "Kivi is a phonetic memory AI system.",
+        "asr_token": "kiwi"
+      }
+    ],
+    "setup_implicit": [],
+    "test_asr": "I bought a fresh kiwi from the market",
+    "expected_output": "I bought a fresh kiwi from the market"
+  },
+  {
+    "id": "case_3_pending_memory",
+    "category": "Pending Memory",
+    "description": "Ignoring a phonetic match because evidence_count has not met the threshold.",
+    "setup_explicit": [],
+    "setup_implicit": [
+      {
+        "asr": "tell rakesh to deploy",
+        "fmt": "Tell Rakeshh to deploy."
+      }
+    ],
+    "test_asr": "is rakesh online",
+    "expected_output": "is rakesh online"
+  },
+  {
+    "id": "case_4_conflicting_memories",
+    "category": "Conflicting Memories",
+    "description": "Disambiguating two similar phonetic matches based on semantic context snippets.",
+    "setup_explicit": [
+      {
+        "canonical": "Aditi",
+        "context": "Aditi manages the frontend design.",
+        "asr_token": "aditi"
+      },
+      {
+        "canonical": "Aditya",
+        "context": "Aditya handles the backend database migrations.",
+        "asr_token": "aditya"
+      }
+    ],
+    "setup_implicit": [],
+    "test_asr": "ask aditya about the database migration",
+    "expected_output": "ask Aditya about the database migration"
+  },
+  {
+    "id": "case_5_novel_entity",
+    "category": "Novel Entities",
+    "description": "Refusing to hallucinate a correction for a completely unseen proper noun.",
+    "setup_explicit": [],
+    "setup_implicit": [],
+    "test_asr": "ask Nandini to review the doc",
+    "expected_output": "ask Nandini to review the doc"
+  },
+  {
+    "id": "case_6_rajeev_to_rajiv",
+    "category": "Symmetric Phonetic Fix",
+    "description": "Correctly applying the ee->i normalization when spoken is 'rajeev' and DB is 'Rajiv'.",
+    "setup_explicit": [
+      {
+        "canonical": "Rajiv",
+        "context": "Rajiv is managing the new database migration.",
+        "asr_token": "rajeev"
+      }
+    ],
+    "setup_implicit": [],
+    "test_asr": "did you ask rajeev about the database?",
+    "expected_output": "did you ask Rajiv about the database?"
+  },
+  {
+    "id": "case_7_rajiv_to_rajeev",
+    "category": "Symmetric Phonetic Fix",
+    "description": "Correctly applying the ee->i normalization when spoken is 'rajiv' and DB is 'Rajeev'.",
+    "setup_explicit": [
+      {
+        "canonical": "Rajeev",
+        "context": "Rajeev handles the backend systems.",
+        "asr_token": "rajiv"
+      }
+    ],
+    "setup_implicit": [],
+    "test_asr": "tell rajiv to restart the server",
+    "expected_output": "tell Rajeev to restart the server"
+  }
+]
