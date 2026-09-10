@@ -74,7 +74,11 @@ What happens step-by-step inside `app/intervention.py` when you process a live A
 * **🎙️ Process ASR:** The hot-path inference testing ground. Paste raw transcripts to see the engine detect, judge, and replace in real-time.
 * **🧠 Learning Engine:** Contains all three training methods above — Implicit Observation, Explicit Correction, and Direct Overrides — each in its own tab.
 * **📚 User Dictionary:** The internal SQLite state machine. Displays all active and pending phonetic memories with a multi-select search and delete tool for easy pruning.
-* **⚙️ Intervention Logs:** A complete audit trail. Every evaluated word is logged with a unique `request_id`, tracking the LLM's exact reasoning, the token index, API latency, and whether it intervened.
+* **⚙️ Intervention Logs:** A comprehensive audit trail for transparency and debugging. Since the system uses an LLM to make semantic decisions, it is critical to know exactly *why* a replacement was made (or skipped). The logs capture:
+  * **Traceability:** A unique `request_id` linking all word evaluations back to a specific ASR transcript.
+  * **LLM Reasoning:** The exact chain-of-thought output from the LLM explaining its semantic judgment.
+  * **Cost & Performance:** Tracks the `latency` (response time) and `token_cost` of every LLM call.
+  * **Outcomes:** Records the original `asr_token`, the phonetic `candidate_word`, and the final `intervened` decision flag.
 
 ---
 
