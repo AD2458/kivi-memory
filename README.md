@@ -6,6 +6,17 @@ The system learns personalized vocabulary (entities, names, specific terms) thro
 
 ---
 
+## 🛠️ Tech Stack
+
+* **Backend API:** FastAPI & Uvicorn
+* **Frontend UI:** Streamlit
+* **Database:** SQLite3 (Serverless, zero-config state management)
+* **LLM Engine:** Groq Cloud API (accessed via the OpenAI Python SDK for ultra-low latency semantic judgments)
+* **Phonetics & Math:** `doublemetaphone` (Phonetic Hashing) and `jellyfish` (Damerau-Levenshtein Edit Distance)
+* **Data Validation:** Pydantic
+
+---
+
 ## 🏗️ Step-by-Step Data Flow
 
 The architecture is split into two distinct pipelines: **Training** (learning new words) and **Inference** (processing transcripts).
